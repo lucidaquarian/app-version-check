@@ -1,0 +1,39 @@
+{
+  "name": "app-version-checker",
+  "version": "1.0.0",
+  "description": "A cross-platform version checker plugin for Cordova and Capacitor-based mobile applications. Compare local app versions against remote sources and prompt users to update.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "test": "node test/test.js",
+    "lint": "eslint src/",
+    "example:cordova": "node examples/cordova-usage.js",
+    "example:capacitor": "node examples/capacitor-usage.js"
+  },
+  "keywords": [
+    "cordova",
+    "capacitor",
+    "version-check",
+    "app-update",
+    "mobile",
+    "ionic",
+    "hybrid-app",
+    "app-store",
+    "play-store",
+    "version-compare"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "peerDependencies": {},
+  "devDependencies": {}
+}
