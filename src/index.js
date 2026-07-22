@@ -60,6 +60,9 @@ const DEFAULT_CONFIG = {
    * regardless of what the store says. Overridden by the remote `minVersion`.
    */
   minVersion: '',
+
+  /** Network timeout (ms) for store / custom-endpoint requests. */
+  timeout: 10000,
 };
 
 // ─── Main Class ──────────────────────────────────────────────────────
@@ -150,11 +153,14 @@ class AppVersionChecker {
    * @returns {Promise<{ version: string, storeUrl?: string, releaseNotes?: string, minVersion?: string, forceUpdate?: boolean }>}
    */
   async getLatestVersion() {
+    const { timeout } = this.config;
+
     // Prefer custom endpoint if configured
     if (this.config.customEndpoint) {
       return fetchCustomEndpoint(
         this.config.customEndpoint,
-        this.config.customEndpointOptions
+        this.config.customEndpointOptions,
+        timeout
       );
     }
 
@@ -165,7 +171,7 @@ class AppVersionChecker {
       if (!bundleId) {
         throw new Error('iosBundleId must be set in config for App Store lookups.');
       }
-      return fetchAppStoreVersion(bundleId, this.config.country);
+      return fetchAppStoreVersion(bundleId, this.config.country, timeout);
     }
 
     if (devicePlatform === 'android') {
@@ -173,7 +179,7 @@ class AppVersionChecker {
       if (!packageName) {
         throw new Error('androidPackageName must be set in config for Play Store lookups.');
       }
-      return fetchPlayStoreVersion(packageName);
+      return fetchPlayStoreVersion(packageName, timeout);
     }
 
     throw new Error(

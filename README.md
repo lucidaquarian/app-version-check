@@ -63,6 +63,7 @@ if (result.forceUpdate) {
 | `customEndpoint` | `string` | `''` | URL to your own version API (skips store lookups) |
 | `customEndpointOptions` | `RequestInit` | `{}` | Extra `fetch` options for the custom endpoint |
 | `minVersion` | `string` | `''` | Local minimum version override for forced updates |
+| `timeout` | `number` | `10000` | Network timeout (ms) for store / custom-endpoint requests |
 
 ## API Reference
 
