@@ -1,5 +1,5 @@
 /**
- * app-update-checker
+ * @lucidaquarian/app-version-checker
  * Cross-platform version checker for Cordova and Capacitor mobile applications.
  */
 

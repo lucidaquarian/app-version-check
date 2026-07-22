@@ -1,13 +1,13 @@
-# app-update-checker
+# @lucidaquarian/app-version-checker
 
-[![npm version](https://img.shields.io/npm/v/app-update-checker.svg)](https://www.npmjs.com/package/app-update-checker)
-[![downloads](https://img.shields.io/npm/dm/app-update-checker.svg)](https://www.npmjs.com/package/app-update-checker)
-[![license](https://img.shields.io/npm/l/app-update-checker.svg)](./LICENSE)
-[![node](https://img.shields.io/node/v/app-update-checker.svg)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@lucidaquarian/app-version-checker.svg)](https://www.npmjs.com/package/@lucidaquarian/app-version-checker)
+[![downloads](https://img.shields.io/npm/dm/@lucidaquarian/app-version-checker.svg)](https://www.npmjs.com/package/@lucidaquarian/app-version-checker)
+[![license](https://img.shields.io/npm/l/@lucidaquarian/app-version-checker.svg)](./LICENSE)
+[![node](https://img.shields.io/node/v/@lucidaquarian/app-version-checker.svg)](https://nodejs.org)
 
 > Detect when your **Cordova** or **Capacitor** app is out of date and prompt users to update.
 
-`app-update-checker` reads the version installed on the device, compares it against the latest published version — from the **Apple App Store**, **Google Play**, or **your own API** — and hands back a single, actionable result: is an update available, what kind (major / minor / patch), and should it be forced?
+`@lucidaquarian/app-version-checker` reads the version installed on the device, compares it against the latest published version — from the **Apple App Store**, **Google Play**, or **your own API** — and hands back a single, actionable result: is an update available, what kind (major / minor / patch), and should it be forced?
 
 ```js
 const result = await checker.checkForUpdate();
@@ -42,7 +42,7 @@ Mobile users routinely run months-old builds. Shipping a fix doesn't help anyone
 ## Installation
 
 ```bash
-npm install app-update-checker
+npm install @lucidaquarian/app-version-checker
 ```
 
 ### Platform prerequisites
@@ -63,7 +63,7 @@ npx cap sync
 ## Quick start
 
 ```js
-import { AppVersionChecker } from 'app-update-checker';
+import { AppVersionChecker } from '@lucidaquarian/app-version-checker';
 
 const checker = new AppVersionChecker({
   platform: 'auto',                            // 'cordova' | 'capacitor' | 'auto'
@@ -158,7 +158,7 @@ AppVersionChecker.compareVersions('1.0.0', '2.0.0');
 Standalone, spec-compliant semver utilities:
 
 ```js
-import { SemVer } from 'app-update-checker';
+import { SemVer } from '@lucidaquarian/app-version-checker';
 
 SemVer.parse('1.2.3');                 // { major: 1, minor: 2, patch: 3, prerelease: '' }
 SemVer.compare('1.0.0', '2.0.0');      // -1
@@ -182,7 +182,7 @@ import {
   fetchAppStoreVersion,   // (bundleId, country?, timeoutMs?)
   fetchPlayStoreVersion,  // (packageName, timeoutMs?)
   fetchCustomEndpoint,    // (url, options?, timeoutMs?)
-} from 'app-update-checker';
+} from '@lucidaquarian/app-version-checker';
 ```
 
 > **Google Play note:** Google has no official public version API, so `fetchPlayStoreVersion` scrapes the store page and can break if Google changes their markup. For production Android checks, prefer a `customEndpoint` backed by your server or the Google Play Developer API.
@@ -225,7 +225,7 @@ See the [`examples/`](./examples) directory for complete integration examples:
 Type declarations ship with the package — no `@types` install needed:
 
 ```ts
-import { AppVersionChecker, VersionCheckResult } from 'app-update-checker';
+import { AppVersionChecker, VersionCheckResult } from '@lucidaquarian/app-version-checker';
 ```
 
 ## Running tests
