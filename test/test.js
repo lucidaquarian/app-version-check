@@ -1,5 +1,5 @@
 /**
- * Test suite for app-update-checker
+ * Test suite for @lucidaquarian/app-version-checker
  * Run with: node test/test.js
  */
 

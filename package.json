@@ -1,9 +1,12 @@
 {
-  "name": "app-update-checker",
+  "name": "@lucidaquarian/app-version-checker",
   "version": "1.0.0",
   "description": "A cross-platform version checker plugin for Cordova and Capacitor-based mobile applications. Compare local app versions against remote sources and prompt users to update.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "src/",
     "examples/"

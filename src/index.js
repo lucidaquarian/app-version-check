@@ -1,5 +1,5 @@
 /**
- * app-update-checker
+ * @lucidaquarian/app-version-checker
  *
  * A cross-platform version checker for Cordova and Capacitor mobile applications.
  * Detects the current app version, compares it against the latest published version
@@ -7,7 +7,7 @@
  * update information.
  *
  * @example
- *   const { AppVersionChecker } = require('app-update-checker');
+ *   const { AppVersionChecker } = require('@lucidaquarian/app-version-checker');
  *
  *   const checker = new AppVersionChecker({
  *     platform: 'auto',                          // 'cordova' | 'capacitor' | 'auto'
