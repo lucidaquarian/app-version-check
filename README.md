@@ -1,6 +1,7 @@
 # app-update-checker
 
 [![npm version](https://img.shields.io/npm/v/app-update-checker.svg)](https://www.npmjs.com/package/app-update-checker)
+[![downloads](https://img.shields.io/npm/dm/app-update-checker.svg)](https://www.npmjs.com/package/app-update-checker)
 [![license](https://img.shields.io/npm/l/app-update-checker.svg)](./LICENSE)
 [![node](https://img.shields.io/node/v/app-update-checker.svg)](https://nodejs.org)
 
