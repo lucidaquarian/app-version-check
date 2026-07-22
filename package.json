@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "files": [
-    "src/"
+    "src/",
+    "examples/"
   ],
   "scripts": {
     "test": "node test/test.js",
@@ -25,11 +26,15 @@
     "play-store",
     "version-compare"
   ],
-  "author": "",
+  "author": "lucidaquarian",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/lucidaquarian/app-version-check.git"
+  },
+  "homepage": "https://github.com/lucidaquarian/app-version-check#readme",
+  "bugs": {
+    "url": "https://github.com/lucidaquarian/app-version-check/issues"
   },
   "engines": {
     "node": ">=14.0.0"
