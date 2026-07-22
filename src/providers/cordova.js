@@ -105,9 +105,12 @@ class CordovaProvider {
       }
 
       let settled = false;
+      let timerId = null;
       const done = () => {
         if (settled) return;
         settled = true;
+        if (timerId !== null) clearTimeout(timerId);
+        document.removeEventListener('deviceready', done, false);
         resolve();
       };
 
@@ -116,7 +119,7 @@ class CordovaProvider {
       // Safety net: `deviceready` fires only once, so if it already fired
       // before this listener was attached we would wait forever. Resolve
       // after a bounded delay rather than hang the update check.
-      setTimeout(done, 5000);
+      timerId = setTimeout(done, 5000);
     });
   }
 

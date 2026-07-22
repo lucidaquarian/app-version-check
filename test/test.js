@@ -63,6 +63,11 @@ console.log('\n🔹 SemVer.parse');
   assert(v.major === 1 && v.minor === 2 && v.patch === 3, 'Ignores build metadata');
 })();
 
+(() => {
+  const v = SemVer.parse('  v1.2.3  ');
+  assert(v.major === 1 && v.minor === 2 && v.patch === 3, 'Trims surrounding whitespace before stripping "v"');
+})();
+
 assertThrows(() => SemVer.parse(''), 'Throws on empty string');
 assertThrows(() => SemVer.parse(null), 'Throws on null');
 assertThrows(() => SemVer.parse(undefined), 'Throws on undefined');

@@ -14,7 +14,7 @@ class SemVer {
       throw new Error(`Invalid version string: "${version}"`);
     }
 
-    const cleaned = version.replace(/^v/i, '').trim();
+    const cleaned = version.trim().replace(/^v/i, '');
 
     // Build metadata (after '+') is ignored for precedence; drop it first.
     const withoutBuild = cleaned.split('+', 1)[0];
