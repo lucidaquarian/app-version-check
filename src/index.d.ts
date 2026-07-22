@@ -1,5 +1,5 @@
 /**
- * app-version-checker
+ * app-update-checker
  * Cross-platform version checker for Cordova and Capacitor mobile applications.
  */
 

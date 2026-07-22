@@ -1,14 +1,14 @@
 /**
- * Example: Using app-version-checker in a Capacitor application.
+ * Example: Using app-update-checker in a Capacitor application.
  *
  * Prerequisites:
  *   npm install @capacitor/app
- *   npm install app-version-checker
+ *   npm install app-update-checker
  *
  * Works with Capacitor 4+ / 5+ and Ionic frameworks.
  */
 
-const { AppVersionChecker } = require('app-version-checker');
+const { AppVersionChecker } = require('app-update-checker');
 
 // ─── Option A: Store-based lookup ────────────────────────────────────
 
@@ -63,7 +63,7 @@ async function performVersionCheck() {
 
   import { Injectable } from '@angular/core';
   import { AlertController } from '@ionic/angular';
-  import { AppVersionChecker } from 'app-version-checker';
+  import { AppVersionChecker } from 'app-update-checker';
   import { Browser } from '@capacitor/browser';
 
   @Injectable({ providedIn: 'root' })
@@ -123,7 +123,7 @@ async function performVersionCheck() {
   // In a React component (useVersionCheck.ts):
 
   import { useEffect, useState } from 'react';
-  import { AppVersionChecker, VersionCheckResult } from 'app-version-checker';
+  import { AppVersionChecker, VersionCheckResult } from 'app-update-checker';
 
   const checker = new AppVersionChecker({
     platform: 'auto',

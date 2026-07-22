@@ -1,12 +1,12 @@
 /**
- * Example: Using app-version-checker in a Cordova application.
+ * Example: Using app-update-checker in a Cordova application.
  *
  * Prerequisites:
  *   cordova plugin add cordova-plugin-app-version
- *   npm install app-version-checker
+ *   npm install app-update-checker
  */
 
-const { AppVersionChecker } = require('app-version-checker');
+const { AppVersionChecker } = require('app-update-checker');
 
 // ─── Basic Setup ─────────────────────────────────────────────────────
 

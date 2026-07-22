@@ -1,0 +1,42 @@
+name: Publish to npm
+
+# Publishes the package to npm whenever a GitHub Release is published.
+# Create a release (which creates the git tag) to trigger it, or run it
+# manually from the Actions tab via workflow_dispatch.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # prepublishOnly re-runs lint + test as a final safety net.
+      # --provenance attaches a signed build attestation (needs a public repo).
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
