@@ -9,7 +9,7 @@
     "examples/"
   ],
   "scripts": {
-    "test": "node test/test.js",
+    "test": "node test/test.js && node test/providers.test.js && node test/stores.test.js",
     "lint": "eslint src/",
     "example:cordova": "node examples/cordova-usage.js",
     "example:capacitor": "node examples/capacitor-usage.js"
