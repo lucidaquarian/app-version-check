@@ -109,6 +109,13 @@ async function main() {
   })();
 
   await (async () => {
+    const restore = mockFetch(async () => ({ ok: true, text: async () => 'blah "version":"7.8.9" blah' }));
+    const result = await fetchPlayStoreVersion('com.example.app');
+    restore();
+    assert(result.version === '7.8.9', 'Falls back to alternate version pattern');
+  })();
+
+  await (async () => {
     const restore = mockFetch(async () => ({ ok: false, status: 404, text: async () => '' }));
     await assertRejects(() => fetchPlayStoreVersion('com.example.app'), 'Rejects on non-ok HTTP status');
     restore();
@@ -184,6 +191,31 @@ async function main() {
   })();
 
   await assertRejects(() => fetchCustomEndpoint(''), 'Rejects when url is missing');
+
+  // ─── Request timeout ───────────────────────────────────────────────
+  console.log('\n🔹 Request timeout');
+
+  await (async () => {
+    // A fetch that never resolves on its own must be aborted by the timeout.
+    const restore = mockFetch((url, options) => new Promise((_resolve, reject) => {
+      const signal = options && options.signal;
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          const err = new Error('aborted');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      }
+    }));
+    let timedOut = false;
+    try {
+      await fetchCustomEndpoint('https://api.example.com/version', {}, 20);
+    } catch (err) {
+      timedOut = /timed out/.test(err.message);
+    }
+    restore();
+    assert(timedOut, 'Aborts and reports a timeout when the request hangs');
+  })();
 
   // ─── Summary ───────────────────────────────────────────────────────
   console.log('\n' + '═'.repeat(50));

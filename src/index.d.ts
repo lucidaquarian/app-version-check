@@ -82,16 +82,19 @@ export interface CustomEndpointResult {
 
 export function fetchAppStoreVersion(
   bundleId: string,
-  country?: string
+  country?: string,
+  timeoutMs?: number
 ): Promise<AppStoreResult>;
 
 export function fetchPlayStoreVersion(
-  packageName: string
+  packageName: string,
+  timeoutMs?: number
 ): Promise<PlayStoreResult>;
 
 export function fetchCustomEndpoint(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
+  timeoutMs?: number
 ): Promise<CustomEndpointResult>;
 
 // ─── Main Checker ────────────────────────────────────────────────────
@@ -117,6 +120,9 @@ export interface AppVersionCheckerConfig {
 
   /** Local minimum supported version override. */
   minVersion?: string;
+
+  /** Network timeout (ms) for store / custom-endpoint requests. Defaults to 10000. */
+  timeout?: number;
 }
 
 export interface VersionCheckResult {
