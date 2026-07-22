@@ -160,6 +160,18 @@ async function main() {
   })();
 
   await (async () => {
+    // Falsy fields in the payload must not defeat the normalized defaults.
+    const restore = mockFetch(async () => ({
+      ok: true,
+      json: async () => ({ version: '1.0.0', releaseNotes: null, minVersion: '' }),
+    }));
+    const result = await fetchCustomEndpoint('https://api.example.com/version');
+    restore();
+    assert(result.releaseNotes === '', 'Normalizes null releaseNotes to empty string');
+    assert(result.minVersion === null, 'Normalizes empty minVersion to null');
+  })();
+
+  await (async () => {
     const restore = mockFetch(async () => ({ ok: true, json: async () => ({ notVersion: 'x' }) }));
     await assertRejects(() => fetchCustomEndpoint('https://api.example.com/version'), 'Rejects when response has no version field');
     restore();

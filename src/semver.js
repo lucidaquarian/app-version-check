@@ -15,18 +15,77 @@ class SemVer {
     }
 
     const cleaned = version.replace(/^v/i, '').trim();
-    const [versionPart, prerelease = ''] = cleaned.split('-', 2);
+
+    // Build metadata (after '+') is ignored for precedence; drop it first.
+    const withoutBuild = cleaned.split('+', 1)[0];
+
+    // Separate the version core from the prerelease at the FIRST hyphen only,
+    // so hyphenated prerelease identifiers (e.g. "beta-2") stay intact.
+    const hyphenIndex = withoutBuild.indexOf('-');
+    const versionPart = hyphenIndex === -1 ? withoutBuild : withoutBuild.slice(0, hyphenIndex);
+    const prerelease = hyphenIndex === -1 ? '' : withoutBuild.slice(hyphenIndex + 1);
+
     const parts = versionPart.split('.');
 
-    const major = parseInt(parts[0], 10) || 0;
-    const minor = parseInt(parts[1], 10) || 0;
-    const patch = parseInt(parts[2], 10) || 0;
+    // Major must be present and numeric; minor/patch default to 0 when omitted.
+    // Non-numeric components are a hard error (previously they were silently
+    // coerced to 0, which let garbage like "abc" parse as 0.0.0).
+    const toComponent = (raw, required) => {
+      if (raw === undefined || raw === '') {
+        if (required) throw new Error(`Unable to parse version: "${version}"`);
+        return 0;
+      }
+      if (!/^\d+$/.test(raw)) {
+        throw new Error(`Unable to parse version: "${version}"`);
+      }
+      return parseInt(raw, 10);
+    };
 
-    if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
-      throw new Error(`Unable to parse version: "${version}"`);
-    }
+    const major = toComponent(parts[0], true);
+    const minor = toComponent(parts[1], false);
+    const patch = toComponent(parts[2], false);
 
     return { major, minor, patch, prerelease };
+  }
+
+  /**
+   * Compare two prerelease strings per the SemVer precedence rules:
+   * dot-separated identifiers compared left to right, numeric identifiers
+   * compared numerically, numeric ranking lower than alphanumeric, and a
+   * larger set of identifiers ranking higher when all preceding are equal.
+   * @param {string} a - Non-empty prerelease string
+   * @param {string} b - Non-empty prerelease string
+   * @returns {number} -1, 0, or 1
+   * @private
+   */
+  static _comparePrerelease(a, b) {
+    const aIds = a.split('.');
+    const bIds = b.split('.');
+    const len = Math.max(aIds.length, bIds.length);
+
+    for (let i = 0; i < len; i++) {
+      const aId = aIds[i];
+      const bId = bIds[i];
+
+      // A larger set of identifiers has higher precedence.
+      if (aId === undefined) return -1;
+      if (bId === undefined) return 1;
+
+      const aNum = /^\d+$/.test(aId);
+      const bNum = /^\d+$/.test(bId);
+
+      if (aNum && bNum) {
+        const diff = parseInt(aId, 10) - parseInt(bId, 10);
+        if (diff !== 0) return diff < 0 ? -1 : 1;
+      } else if (aNum !== bNum) {
+        // Numeric identifiers have lower precedence than alphanumeric ones.
+        return aNum ? -1 : 1;
+      } else if (aId !== bId) {
+        return aId < bId ? -1 : 1;
+      }
+    }
+
+    return 0;
   }
 
   /**
@@ -47,7 +106,7 @@ class SemVer {
     if (a.prerelease && !b.prerelease) return -1;
     if (!a.prerelease && b.prerelease) return 1;
     if (a.prerelease && b.prerelease) {
-      return a.prerelease < b.prerelease ? -1 : a.prerelease > b.prerelease ? 1 : 0;
+      return SemVer._comparePrerelease(a.prerelease, b.prerelease);
     }
 
     return 0;

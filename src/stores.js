@@ -8,12 +8,12 @@
  *
  * @param {string} bundleId - The iOS bundle identifier (e.g. "com.example.app")
  * @param {string} [country='us'] - Two-letter ISO country code
- * @returns {Promise<{ version: string, releaseNotes: string, storeUrl: string, releaseDate: string }>}
+ * @returns {Promise<{ version: string, releaseNotes: string, storeUrl: string, releaseDate: string, minimumOsVersion: string }>}
  */
 async function fetchAppStoreVersion(bundleId, country = 'us') {
   if (!bundleId) throw new Error('bundleId is required for App Store lookup');
 
-  const url = `https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(bundleId)}&country=${country}`;
+  const url = `https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(bundleId)}&country=${encodeURIComponent(country)}`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -29,6 +29,12 @@ async function fetchAppStoreVersion(bundleId, country = 'us') {
   }
 
   const result = data.results[0];
+
+  if (!result.version) {
+    throw new Error(
+      `App Store result for bundleId "${bundleId}" did not include a version.`
+    );
+  }
 
   return {
     version: result.version,
@@ -116,13 +122,16 @@ async function fetchCustomEndpoint(url, options = {}) {
     throw new Error('Custom endpoint response must include a "version" field.');
   }
 
+  // Spread the raw payload first so pass-through fields are preserved, then
+  // apply the normalized fields last so their defaults are not clobbered by
+  // falsy/absent values from the endpoint.
   return {
+    ...data,
     version: data.version,
     minVersion: data.minVersion || null,
     releaseNotes: data.releaseNotes || '',
     storeUrl: data.storeUrl || '',
     forceUpdate: data.forceUpdate || false,
-    ...data,
   };
 }
 
