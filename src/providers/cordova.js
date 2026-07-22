@@ -49,11 +49,13 @@ class CordovaProvider {
 
     const appVersion = cordova.getAppVersion || window.AppVersion;
 
+    // Bind each method to the plugin object so callers that rely on `this`
+    // inside the plugin keep working when the function is passed to _promisify.
     const [versionName, versionCode, packageName, appName] = await Promise.all([
-      this._promisify(appVersion.getVersionNumber),
-      this._promisify(appVersion.getVersionCode),
-      this._promisify(appVersion.getPackageName),
-      this._promisify(appVersion.getAppName),
+      this._promisify(appVersion.getVersionNumber.bind(appVersion)),
+      this._promisify(appVersion.getVersionCode.bind(appVersion)),
+      this._promisify(appVersion.getPackageName.bind(appVersion)),
+      this._promisify(appVersion.getAppName.bind(appVersion)),
     ]);
 
     return { versionName, versionCode, packageName, appName };
@@ -93,11 +95,31 @@ class CordovaProvider {
    */
   _waitForDeviceReady() {
     return new Promise((resolve) => {
-      if (document.readyState === 'complete' || window.cordova?.plugins) {
+      if (
+        typeof document === 'undefined' ||
+        document.readyState === 'complete' ||
+        window.cordova?.plugins
+      ) {
         resolve();
-      } else {
-        document.addEventListener('deviceready', resolve, false);
+        return;
       }
+
+      let settled = false;
+      let timerId = null;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        if (timerId !== null) clearTimeout(timerId);
+        document.removeEventListener('deviceready', done, false);
+        resolve();
+      };
+
+      document.addEventListener('deviceready', done, false);
+
+      // Safety net: `deviceready` fires only once, so if it already fired
+      // before this listener was attached we would wait forever. Resolve
+      // after a bounded delay rather than hang the update check.
+      timerId = setTimeout(done, 5000);
     });
   }
 

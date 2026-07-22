@@ -53,9 +53,26 @@ console.log('\n🔹 SemVer.parse');
   assert(v.major === 1 && v.minor === 0 && v.patch === 0, 'Handles two-part version');
 })();
 
+(() => {
+  const v = SemVer.parse('1.0.0-beta-2');
+  assert(v.prerelease === 'beta-2', 'Preserves hyphens inside the prerelease tag');
+})();
+
+(() => {
+  const v = SemVer.parse('1.2.3+build.99');
+  assert(v.major === 1 && v.minor === 2 && v.patch === 3, 'Ignores build metadata');
+})();
+
+(() => {
+  const v = SemVer.parse('  v1.2.3  ');
+  assert(v.major === 1 && v.minor === 2 && v.patch === 3, 'Trims surrounding whitespace before stripping "v"');
+})();
+
 assertThrows(() => SemVer.parse(''), 'Throws on empty string');
 assertThrows(() => SemVer.parse(null), 'Throws on null');
 assertThrows(() => SemVer.parse(undefined), 'Throws on undefined');
+assertThrows(() => SemVer.parse('abc'), 'Throws on non-numeric string');
+assertThrows(() => SemVer.parse('1.x.0'), 'Throws on non-numeric component');
 
 // ─── SemVer.compare ──────────────────────────────────────────────────
 
@@ -69,6 +86,11 @@ assert(SemVer.compare('1.0.1', '1.0.0') === 1, '1.0.1 > 1.0.0');
 assert(SemVer.compare('1.0.0-alpha', '1.0.0') === -1, '1.0.0-alpha < 1.0.0');
 assert(SemVer.compare('1.0.0', '1.0.0-alpha') === 1, '1.0.0 > 1.0.0-alpha');
 assert(SemVer.compare('1.0.0-alpha', '1.0.0-beta') === -1, 'alpha < beta');
+assert(SemVer.compare('1.0.0-alpha.2', '1.0.0-alpha.10') === -1, 'alpha.2 < alpha.10 (numeric identifiers)');
+assert(SemVer.compare('1.0.0-alpha.10', '1.0.0-alpha.2') === 1, 'alpha.10 > alpha.2 (numeric identifiers)');
+assert(SemVer.compare('1.0.0-alpha', '1.0.0-alpha.1') === -1, 'fewer identifiers < more identifiers');
+assert(SemVer.compare('1.0.0-alpha.1', '1.0.0-beta') === -1, 'numeric identifier ranks below alphanumeric');
+assert(SemVer.compare('1.0.0-beta.2', '1.0.0-beta.2') === 0, 'identical prereleases are equal');
 
 // ─── SemVer helpers ──────────────────────────────────────────────────
 
@@ -102,6 +124,8 @@ assert(SemVer.isValid('v1.0.0') === true, '"v1.0.0" is valid');
 assert(SemVer.isValid('1.0.0-beta.1') === true, '"1.0.0-beta.1" is valid');
 assert(SemVer.isValid('') === false, 'Empty string is invalid');
 assert(SemVer.isValid(null) === false, 'null is invalid');
+assert(SemVer.isValid('abc') === false, '"abc" is invalid (not silently 0.0.0)');
+assert(SemVer.isValid('1.2.hello') === false, '"1.2.hello" is invalid');
 
 // ─── AppVersionChecker.compareVersions (static) ─────────────────────
 
