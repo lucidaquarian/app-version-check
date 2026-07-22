@@ -1,5 +1,5 @@
 {
-  "name": "app-version-checker",
+  "name": "app-update-checker",
   "version": "1.0.0",
   "description": "A cross-platform version checker plugin for Cordova and Capacitor-based mobile applications. Compare local app versions against remote sources and prompt users to update.",
   "main": "src/index.js",
@@ -11,6 +11,7 @@
   "scripts": {
     "test": "node test/test.js && node test/providers.test.js && node test/stores.test.js",
     "lint": "node scripts/lint.js",
+    "prepublishOnly": "npm run lint && npm test",
     "example:cordova": "node examples/cordova-usage.js",
     "example:capacitor": "node examples/capacitor-usage.js"
   },

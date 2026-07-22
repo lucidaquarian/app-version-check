@@ -1,4 +1,4 @@
-# app-version-checker
+# app-update-checker
 
 A cross-platform npm plugin for checking app versions in **Cordova** and **Capacitor** mobile applications. Compare the installed version against the latest published version on the App Store, Google Play, or your own API endpoint — and prompt users to update.
 
@@ -16,7 +16,7 @@ A cross-platform npm plugin for checking app versions in **Cordova** and **Capac
 ## Installation
 
 ```bash
-npm install app-version-checker
+npm install app-update-checker
 ```
 
 ### Platform prerequisites
@@ -35,7 +35,7 @@ npx cap sync
 ## Quick Start
 
 ```js
-import { AppVersionChecker } from 'app-version-checker';
+import { AppVersionChecker } from 'app-update-checker';
 
 const checker = new AppVersionChecker({
   platform: 'auto',                             // 'cordova' | 'capacitor' | 'auto'
@@ -111,7 +111,7 @@ const { updateAvailable, updateType } = AppVersionChecker.compareVersions('1.0.0
 Standalone semver utilities:
 
 ```js
-import { SemVer } from 'app-version-checker';
+import { SemVer } from 'app-update-checker';
 
 SemVer.parse('1.2.3');              // { major: 1, minor: 2, patch: 3, prerelease: '' }
 SemVer.compare('1.0.0', '2.0.0');  // -1

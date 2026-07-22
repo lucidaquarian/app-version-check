@@ -1,5 +1,5 @@
 /**
- * Test suite for app-version-checker
+ * Test suite for app-update-checker
  * Run with: node test/test.js
  */
 
