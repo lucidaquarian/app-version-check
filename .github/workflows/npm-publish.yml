@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write # required for npm provenance
 
 jobs:
   publish:
@@ -35,8 +34,10 @@ jobs:
         run: npm test
 
       # prepublishOnly re-runs lint + test as a final safety net.
-      # --provenance attaches a signed build attestation (needs a public repo).
+      # Note: --provenance is intentionally omitted because it requires a
+      # public source repository; this repo is private. The npm package is
+      # still published publicly via --access public.
       - name: Publish
-        run: npm publish --provenance --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
