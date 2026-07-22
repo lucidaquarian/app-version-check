@@ -32,6 +32,22 @@ npm install @capacitor/app
 npx cap sync
 ```
 
+## Platform Support
+
+| Runtime | Supported | How |
+|---|---|---|
+| **Cordova** | ✅ | via `cordova-plugin-app-version` |
+| **Capacitor** | ✅ | via `@capacitor/app` |
+| **Ionic** | ✅ | Ionic apps run on Cordova or Capacitor — the matching provider is used automatically |
+| **Web / PWA** | ⚠️ Partial | No native version available at runtime; requires a `customEndpoint` (see [Custom Endpoint](#custom-endpoint)) |
+
+A few things worth knowing:
+
+- **Ionic is a UI framework, not a native runtime.** Every Ionic app ships on top of Cordova or Capacitor (Capacitor is the modern default). This plugin targets that underlying layer, so it works in Ionic apps automatically — `platform: 'auto'` detects whichever runtime is present (preferring Capacitor). There is no separate Ionic provider because none is needed.
+- **Reading the installed version requires the native layer.** In a pure browser context (`ionic serve`, a PWA, or desktop web) the native plugin isn't available, so `checkForUpdate()` and `getCurrentVersion()` will throw. Run it inside the built native app, or drive web checks entirely through a `customEndpoint`.
+- **Android store lookups use HTML scraping.** Google offers no official public version API, so the Play Store lookup parses the store page and may break if Google changes their markup. For production, prefer a `customEndpoint`.
+- **A `customEndpoint` is the most reliable option** — and the only one that works on the web. It returns your own version JSON and skips the stores entirely.
+
 ## Quick Start
 
 ```js
