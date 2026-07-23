@@ -251,6 +251,53 @@ async function main() {
     assert(r.updateAvailable === true && r.forceUpdate === false, 'Update available but not forced when above the minimum');
   })();
 
+  // ─── getLatestVersion caching ──────────────────────────────────────
+  console.log('\n🔹 getLatestVersion caching');
+
+  /** Mock endpoint that counts how many times it was fetched. */
+  function countingEndpoint(json) {
+    let calls = 0;
+    const restore = mockFetch(async () => { calls++; return { ok: true, json: async () => json }; });
+    return { restore, calls: () => calls };
+  }
+
+  await (async () => {
+    const c = checkerWith(fakeProvider({ version: '1.0.0', platform: 'ios' }), {
+      customEndpoint: 'https://api.example.com/v',
+      cacheTime: 60000,
+    });
+    const m = countingEndpoint({ version: '1.1.0' });
+    await c.checkForUpdate();
+    await c.checkForUpdate();
+    m.restore();
+    assert(m.calls() === 1, 'Second lookup within cacheTime is served from cache (1 fetch)');
+  })();
+
+  await (async () => {
+    const c = checkerWith(fakeProvider({ version: '1.0.0', platform: 'ios' }), {
+      customEndpoint: 'https://api.example.com/v',
+      cacheTime: 60000,
+    });
+    const m = countingEndpoint({ version: '1.1.0' });
+    await c.getLatestVersion();
+    c.clearCache();
+    await c.getLatestVersion();
+    m.restore();
+    assert(m.calls() === 2, 'clearCache() forces a fresh lookup');
+  })();
+
+  await (async () => {
+    const c = checkerWith(fakeProvider({ version: '1.0.0', platform: 'ios' }), {
+      customEndpoint: 'https://api.example.com/v',
+      // cacheTime defaults to 0 → caching disabled
+    });
+    const m = countingEndpoint({ version: '1.1.0' });
+    await c.getLatestVersion();
+    await c.getLatestVersion();
+    m.restore();
+    assert(m.calls() === 2, 'cacheTime 0 disables caching (every lookup hits the network)');
+  })();
+
   // ─── Summary ───────────────────────────────────────────────────────
   console.log('\n' + '═'.repeat(50));
   console.log(`  Total: ${passed + failed}  |  Passed: ${passed}  |  Failed: ${failed}`);

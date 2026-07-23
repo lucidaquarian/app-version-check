@@ -82,7 +82,7 @@ async function main() {
 
   await (async () => {
     const restore = mockFetch(async () => ({ ok: false, status: 503, json: async () => ({}) }));
-    await assertRejects(() => fetchAppStoreVersion('com.example.app'), 'Rejects on non-ok HTTP status');
+    await assertRejects(() => fetchAppStoreVersion('com.example.app', 'us', { retries: 0 }), 'Rejects on non-ok HTTP status');
     restore();
   })();
 
@@ -186,7 +186,7 @@ async function main() {
 
   await (async () => {
     const restore = mockFetch(async () => ({ ok: false, status: 500, json: async () => ({}) }));
-    await assertRejects(() => fetchCustomEndpoint('https://api.example.com/version'), 'Rejects on non-ok HTTP status');
+    await assertRejects(() => fetchCustomEndpoint('https://api.example.com/version', {}, { retries: 0 }), 'Rejects on non-ok HTTP status');
     restore();
   })();
 
@@ -209,12 +209,67 @@ async function main() {
     }));
     let timedOut = false;
     try {
-      await fetchCustomEndpoint('https://api.example.com/version', {}, 20);
+      await fetchCustomEndpoint('https://api.example.com/version', {}, { timeout: 20, retries: 0 });
     } catch (err) {
       timedOut = /timed out/.test(err.message);
     }
     restore();
     assert(timedOut, 'Aborts and reports a timeout when the request hangs');
+  })();
+
+  // ─── Retry on transient failures ───────────────────────────────────
+  console.log('\n🔹 Retry on transient failures');
+
+  await (async () => {
+    // Two 503s then a success — should retry and resolve.
+    let calls = 0;
+    const restore = mockFetch(async () => {
+      calls++;
+      if (calls <= 2) return { ok: false, status: 503, json: async () => ({}) };
+      return { ok: true, json: async () => ({ version: '1.2.3' }) };
+    });
+    const result = await fetchCustomEndpoint('https://api.example.com/version', {}, { retries: 2, backoff: 0 });
+    restore();
+    assert(result.version === '1.2.3', 'Retries on 5xx and eventually succeeds');
+    assert(calls === 3, 'Made exactly 3 attempts (1 + 2 retries)');
+  })();
+
+  await (async () => {
+    // Network error then success — should retry.
+    let calls = 0;
+    const restore = mockFetch(async () => {
+      calls++;
+      if (calls === 1) throw new TypeError('network down');
+      return { ok: true, json: async () => ({ version: '9.0.0' }) };
+    });
+    const result = await fetchCustomEndpoint('https://api.example.com/version', {}, { retries: 2, backoff: 0 });
+    restore();
+    assert(result.version === '9.0.0', 'Retries on a thrown network error and succeeds');
+    assert(calls === 2, 'Stopped retrying once it succeeded');
+  })();
+
+  await (async () => {
+    // Always 503 — should give up after the configured retries.
+    let calls = 0;
+    const restore = mockFetch(async () => { calls++; return { ok: false, status: 503, json: async () => ({}) }; });
+    await assertRejects(
+      () => fetchCustomEndpoint('https://api.example.com/version', {}, { retries: 2, backoff: 0 }),
+      'Gives up after exhausting retries on persistent 5xx'
+    );
+    restore();
+    assert(calls === 3, 'Attempted 3 times before giving up');
+  })();
+
+  await (async () => {
+    // 404 is not retryable — should fail immediately, no extra attempts.
+    let calls = 0;
+    const restore = mockFetch(async () => { calls++; return { ok: false, status: 404, json: async () => ({}) }; });
+    await assertRejects(
+      () => fetchCustomEndpoint('https://api.example.com/version', {}, { retries: 3, backoff: 0 }),
+      'Does not retry a non-retryable 4xx'
+    );
+    restore();
+    assert(calls === 1, 'Made only one attempt for a 404');
   })();
 
   // ─── Summary ───────────────────────────────────────────────────────

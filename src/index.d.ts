@@ -80,21 +80,31 @@ export interface CustomEndpointResult {
   [key: string]: any;
 }
 
+/** Network tuning: a plain timeout in ms, or a full options object. */
+export interface NetworkOptions {
+  /** Request timeout in ms. */
+  timeout?: number;
+  /** Extra attempts after the first on transient failures. */
+  retries?: number;
+  /** Base backoff (ms) between retries; grows exponentially. */
+  backoff?: number;
+}
+
 export function fetchAppStoreVersion(
   bundleId: string,
   country?: string,
-  timeoutMs?: number
+  net?: number | NetworkOptions
 ): Promise<AppStoreResult>;
 
 export function fetchPlayStoreVersion(
   packageName: string,
-  timeoutMs?: number
+  net?: number | NetworkOptions
 ): Promise<PlayStoreResult>;
 
 export function fetchCustomEndpoint(
   url: string,
   options?: RequestInit,
-  timeoutMs?: number
+  net?: number | NetworkOptions
 ): Promise<CustomEndpointResult>;
 
 // ─── Main Checker ────────────────────────────────────────────────────
@@ -123,6 +133,15 @@ export interface AppVersionCheckerConfig {
 
   /** Network timeout (ms) for store / custom-endpoint requests. Defaults to 10000. */
   timeout?: number;
+
+  /** Extra attempts after the first on transient network failures. Defaults to 2. */
+  retries?: number;
+
+  /** Base backoff (ms) between retries; grows exponentially. Defaults to 300. */
+  retryDelay?: number;
+
+  /** Cache the remote lookup in memory for this many ms. 0 (default) disables caching. */
+  cacheTime?: number;
 }
 
 export interface VersionCheckResult {
@@ -152,6 +171,7 @@ export class AppVersionChecker {
   getDevicePlatform(): string;
   getLatestVersion(): Promise<AppStoreResult | PlayStoreResult | CustomEndpointResult>;
   checkForUpdate(): Promise<VersionCheckResult>;
+  clearCache(): void;
 
   static compareVersions(
     currentVersion: string,
