@@ -1,11 +1,19 @@
 name: Publish to npm
 
-# Publishes the package to npm whenever a GitHub Release is published.
-# Create a release (which creates the git tag) to trigger it, or run it
-# manually from the Actions tab via workflow_dispatch.
+# Manual publish to npm — run it from the Actions tab (Run workflow).
+#
+# Why manual and not auto-on-release?
+#   This npm account enforces 2FA on writes. A classic "Publish" token (or an
+#   interactive login) triggers a one-time-password prompt in CI (npm error
+#   EOTP) that a workflow cannot answer, so release-triggered publishing fails.
+#   To publish from CI, set the NPM_TOKEN secret to an npm **Automation** token
+#   (or a granular token with read-write for this package) — those bypass 2FA.
+#
+#   Once such a token is configured, you can re-enable auto-publish on release
+#   by adding these triggers back under `on:`:
+#     release:
+#       types: [published]
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -21,8 +29,17 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify NPM_TOKEN is set
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is not set. Add an npm Automation token in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm install
@@ -34,9 +51,8 @@ jobs:
         run: npm test
 
       # prepublishOnly re-runs lint + test as a final safety net.
-      # Note: --provenance is intentionally omitted because it requires a
-      # public source repository; this repo is private. The npm package is
-      # still published publicly via --access public.
+      # --provenance is omitted because it requires a public repo (this is
+      # private); the package is still published publicly via --access public.
       - name: Publish
         run: npm publish --access public
         env:
