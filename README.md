@@ -102,6 +102,13 @@ if (result.forceUpdate) {
 | `customEndpointOptions` | `RequestInit` | `{}` | Extra `fetch` options for the custom endpoint |
 | `minVersion` | `string` | `''` | Local minimum supported version for forced updates |
 | `timeout` | `number` | `10000` | Network timeout (ms) for store / custom-endpoint requests |
+| `retries` | `number` | `2` | Extra attempts after the first on transient failures (429/5xx/network errors) |
+| `retryDelay` | `number` | `300` | Base backoff (ms) between retries; grows exponentially |
+| `cacheTime` | `number` | `0` | Cache the remote lookup in memory for this many ms; `0` disables caching |
+
+### Caching & retries
+
+Transient failures (HTTP 429/5xx or network errors) are retried automatically with exponential backoff — non-retryable responses like `404` fail fast. If you call `checkForUpdate()` on every app launch, set `cacheTime` (e.g. `21600000` for 6h) so repeated checks reuse the last remote result instead of hitting the store each time. Call `checker.clearCache()` to force a fresh lookup.
 
 ## Result shape
 

@@ -6,6 +6,67 @@
 /** Default network timeout (ms) applied to every store request. */
 const DEFAULT_TIMEOUT_MS = 10000;
 
+/** Default number of extra attempts after the first, on transient failures. */
+const DEFAULT_RETRIES = 2;
+
+/** Default base backoff (ms); grows exponentially per retry. */
+const DEFAULT_RETRY_BACKOFF_MS = 300;
+
+/**
+ * Normalize the trailing network option, which may be a plain timeout number
+ * (backwards compatible) or an options object.
+ * @param {number|{timeout?:number, retries?:number, backoff?:number}} [opt]
+ * @returns {{ timeout: number, retries: number, backoff: number }}
+ */
+function resolveNet(opt) {
+  if (typeof opt === 'number') opt = { timeout: opt };
+  opt = opt || {};
+  return {
+    timeout: opt.timeout != null ? opt.timeout : DEFAULT_TIMEOUT_MS,
+    retries: opt.retries != null ? opt.retries : DEFAULT_RETRIES,
+    backoff: opt.backoff != null ? opt.backoff : DEFAULT_RETRY_BACKOFF_MS,
+  };
+}
+
+/** HTTP statuses worth retrying: rate-limiting and server-side errors. */
+function isRetryableStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * `fetchWithTimeout` plus retry-with-exponential-backoff on transient failures:
+ * thrown network/timeout errors and retryable HTTP statuses (429, 5xx).
+ * Non-retryable responses (2xx, 4xx) are returned as-is for the caller to handle.
+ *
+ * @param {string} url
+ * @param {object} options
+ * @param {{ timeout: number, retries: number, backoff: number }} net
+ * @returns {Promise<Response>}
+ */
+async function fetchWithRetry(url, options, net) {
+  const { timeout, retries, backoff } = net;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0 && backoff > 0) {
+      await sleep(backoff * Math.pow(2, attempt - 1));
+    }
+
+    try {
+      const response = await fetchWithTimeout(url, options, timeout);
+      // Success or a non-retryable status → hand back to the caller.
+      if (response.ok || !isRetryableStatus(response.status) || attempt === retries) {
+        return response;
+      }
+      // Retryable status with attempts remaining → loop and back off.
+    } catch (err) {
+      if (attempt === retries) throw err;
+      // Transient error with attempts remaining → loop and back off.
+    }
+  }
+}
+
 /**
  * `fetch` wrapper that aborts the request after `timeoutMs`, so a hung
  * connection can never make a version check hang indefinitely. Any caller
@@ -45,15 +106,15 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
  *
  * @param {string} bundleId - The iOS bundle identifier (e.g. "com.example.app")
  * @param {string} [country='us'] - Two-letter ISO country code
- * @param {number} [timeoutMs] - Request timeout in ms
+ * @param {number|{timeout?:number,retries?:number,backoff?:number}} [net] - Timeout ms, or network options
  * @returns {Promise<{ version: string, releaseNotes: string, storeUrl: string, releaseDate: string, minimumOsVersion: string }>}
  */
-async function fetchAppStoreVersion(bundleId, country = 'us', timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function fetchAppStoreVersion(bundleId, country = 'us', net) {
   if (!bundleId) throw new Error('bundleId is required for App Store lookup');
 
   const url = `https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(bundleId)}&country=${encodeURIComponent(country)}`;
 
-  const response = await fetchWithTimeout(url, {}, timeoutMs);
+  const response = await fetchWithRetry(url, {}, resolveNet(net));
   if (!response.ok) {
     throw new Error(`App Store lookup failed: HTTP ${response.status}`);
   }
@@ -90,15 +151,15 @@ async function fetchAppStoreVersion(bundleId, country = 'us', timeoutMs = DEFAUL
  * For production use, prefer a custom server endpoint or the Google Play Developer API.
  *
  * @param {string} packageName - The Android package name (e.g. "com.example.app")
- * @param {number} [timeoutMs] - Request timeout in ms
+ * @param {number|{timeout?:number,retries?:number,backoff?:number}} [net] - Timeout ms, or network options
  * @returns {Promise<{ version: string, storeUrl: string }>}
  */
-async function fetchPlayStoreVersion(packageName, timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function fetchPlayStoreVersion(packageName, net) {
   if (!packageName) throw new Error('packageName is required for Play Store lookup');
 
   const storeUrl = `https://play.google.com/store/apps/details?id=${encodeURIComponent(packageName)}&hl=en`;
 
-  const response = await fetchWithTimeout(storeUrl, {}, timeoutMs);
+  const response = await fetchWithRetry(storeUrl, {}, resolveNet(net));
   if (!response.ok) {
     throw new Error(`Play Store lookup failed: HTTP ${response.status}`);
   }
@@ -151,13 +212,13 @@ async function fetchPlayStoreVersion(packageName, timeoutMs = DEFAULT_TIMEOUT_MS
  *
  * @param {string} url - The endpoint URL
  * @param {object} [options] - Fetch options (headers, etc.)
- * @param {number} [timeoutMs] - Request timeout in ms
+ * @param {number|{timeout?:number,retries?:number,backoff?:number}} [net] - Timeout ms, or network options
  * @returns {Promise<object>}
  */
-async function fetchCustomEndpoint(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function fetchCustomEndpoint(url, options = {}, net) {
   if (!url) throw new Error('URL is required for custom endpoint lookup');
 
-  const response = await fetchWithTimeout(
+  const response = await fetchWithRetry(
     url,
     {
       method: 'GET',
@@ -167,7 +228,7 @@ async function fetchCustomEndpoint(url, options = {}, timeoutMs = DEFAULT_TIMEOU
         ...(options.headers || {}),
       },
     },
-    timeoutMs
+    resolveNet(net)
   );
 
   if (!response.ok) {
@@ -198,4 +259,6 @@ module.exports = {
   fetchPlayStoreVersion,
   fetchCustomEndpoint,
   DEFAULT_TIMEOUT_MS,
+  DEFAULT_RETRIES,
+  DEFAULT_RETRY_BACKOFF_MS,
 };

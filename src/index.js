@@ -63,6 +63,19 @@ const DEFAULT_CONFIG = {
 
   /** Network timeout (ms) for store / custom-endpoint requests. */
   timeout: 10000,
+
+  /** Extra attempts after the first on transient network failures (429/5xx/errors). */
+  retries: 2,
+
+  /** Base backoff (ms) between retries; grows exponentially. */
+  retryDelay: 300,
+
+  /**
+   * How long (ms) to cache the remote latest-version lookup in memory.
+   * 0 disables caching (every check hits the network). Useful when
+   * checkForUpdate() runs on every app launch.
+   */
+  cacheTime: 0,
 };
 
 // ─── Main Class ──────────────────────────────────────────────────────
@@ -78,6 +91,17 @@ class AppVersionChecker {
     this._cordova = new CordovaProvider();
     this._capacitor = new CapacitorProvider();
     this._provider = null;
+
+    /** @type {{ key: string, value: object, expires: number } | null} */
+    this._latestCache = null;
+  }
+
+  /**
+   * Clear the in-memory latest-version cache, forcing the next lookup to
+   * hit the network.
+   */
+  clearCache() {
+    this._latestCache = null;
   }
 
   // ── Provider Detection ─────────────────────────────────────────────
@@ -150,17 +174,57 @@ class AppVersionChecker {
 
   /**
    * Fetch the latest version info from the appropriate store or custom endpoint.
+   * Result is cached in memory for `cacheTime` ms when that is greater than 0.
    * @returns {Promise<{ version: string, storeUrl?: string, releaseNotes?: string, minVersion?: string, forceUpdate?: boolean }>}
    */
   async getLatestVersion() {
-    const { timeout } = this.config;
+    const { cacheTime } = this.config;
+
+    if (cacheTime > 0) {
+      const key = this._latestCacheKey();
+      const cached = this._latestCache;
+      if (cached && cached.key === key && cached.expires > Date.now()) {
+        return cached.value;
+      }
+      const value = await this._fetchLatestVersion();
+      this._latestCache = { key, value, expires: Date.now() + cacheTime };
+      return value;
+    }
+
+    return this._fetchLatestVersion();
+  }
+
+  /**
+   * Build a cache key that changes whenever the lookup target changes.
+   * @returns {string}
+   * @private
+   */
+  _latestCacheKey() {
+    if (this.config.customEndpoint) return `custom:${this.config.customEndpoint}`;
+    const platform = this.getDevicePlatform();
+    if (platform === 'ios') return `ios:${this.config.iosBundleId}:${this.config.country}`;
+    if (platform === 'android') return `android:${this.config.androidPackageName}`;
+    return platform;
+  }
+
+  /**
+   * Perform the actual remote lookup (no caching).
+   * @returns {Promise<object>}
+   * @private
+   */
+  async _fetchLatestVersion() {
+    const net = {
+      timeout: this.config.timeout,
+      retries: this.config.retries,
+      backoff: this.config.retryDelay,
+    };
 
     // Prefer custom endpoint if configured
     if (this.config.customEndpoint) {
       return fetchCustomEndpoint(
         this.config.customEndpoint,
         this.config.customEndpointOptions,
-        timeout
+        net
       );
     }
 
@@ -171,7 +235,7 @@ class AppVersionChecker {
       if (!bundleId) {
         throw new Error('iosBundleId must be set in config for App Store lookups.');
       }
-      return fetchAppStoreVersion(bundleId, this.config.country, timeout);
+      return fetchAppStoreVersion(bundleId, this.config.country, net);
     }
 
     if (devicePlatform === 'android') {
@@ -179,7 +243,7 @@ class AppVersionChecker {
       if (!packageName) {
         throw new Error('androidPackageName must be set in config for Play Store lookups.');
       }
-      return fetchPlayStoreVersion(packageName, timeout);
+      return fetchPlayStoreVersion(packageName, net);
     }
 
     throw new Error(
