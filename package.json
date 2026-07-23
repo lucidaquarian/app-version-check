@@ -3,7 +3,17 @@
   "version": "1.0.0",
   "description": "A cross-platform version checker plugin for Cordova and Capacitor-based mobile applications. Compare local app versions against remote sources and prompt users to update.",
   "main": "src/index.js",
+  "module": "src/index.mjs",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.mjs",
+      "require": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "publishConfig": {
     "access": "public"
   },
@@ -12,7 +22,7 @@
     "examples/"
   ],
   "scripts": {
-    "test": "node test/test.js && node test/providers.test.js && node test/stores.test.js && node test/checker.test.js",
+    "test": "node test/test.js && node test/providers.test.js && node test/stores.test.js && node test/checker.test.js && node test/esm.test.mjs",
     "lint": "node scripts/lint.js",
     "prepublishOnly": "npm run lint && npm test",
     "example:cordova": "node examples/cordova-usage.js",

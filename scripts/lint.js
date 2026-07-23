@@ -20,7 +20,7 @@ function collectJsFiles(dir) {
     const full = path.join(dir, entry);
     if (statSync(full).isDirectory()) {
       files.push(...collectJsFiles(full));
-    } else if (full.endsWith('.js')) {
+    } else if (full.endsWith('.js') || full.endsWith('.mjs')) {
       files.push(full);
     }
   }

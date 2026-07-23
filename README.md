@@ -220,6 +220,18 @@ See the [`examples/`](./examples) directory for complete integration examples:
 - [`cordova-usage.js`](./examples/cordova-usage.js) — Cordova with native dialogs
 - [`capacitor-usage.js`](./examples/capacitor-usage.js) — Capacitor with Ionic Angular and a React hook
 
+## Module formats
+
+The package ships both ES module and CommonJS entry points, so either import style works:
+
+```js
+// ES modules (Ionic / Vite / webpack / modern Node)
+import { AppVersionChecker } from '@lucidaquarian/app-version-checker';
+
+// CommonJS
+const { AppVersionChecker } = require('@lucidaquarian/app-version-checker');
+```
+
 ## TypeScript
 
 Type declarations ship with the package — no `@types` install needed:
