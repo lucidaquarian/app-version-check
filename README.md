@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@lucidaquarian/app-version-checker.svg)](https://www.npmjs.com/package/@lucidaquarian/app-version-checker)
 [![downloads](https://img.shields.io/npm/dm/@lucidaquarian/app-version-checker.svg)](https://www.npmjs.com/package/@lucidaquarian/app-version-checker)
-[![license](https://img.shields.io/npm/l/@lucidaquarian/app-version-checker.svg)](./LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![node](https://img.shields.io/node/v/@lucidaquarian/app-version-checker.svg)](https://nodejs.org)
 
 > Detect when your **Cordova** or **Capacitor** app is out of date and prompt users to update.
