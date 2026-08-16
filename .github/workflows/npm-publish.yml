@@ -1,19 +1,21 @@
 name: Publish to npm
 
-# Manual publish to npm — run it from the Actions tab (Run workflow).
+# Publishes the package to npm when a GitHub Release is published, and can also
+# be run on demand from the Actions tab (Run workflow).
 #
-# Why manual and not auto-on-release?
-#   This npm account enforces 2FA on writes. A classic "Publish" token (or an
-#   interactive login) triggers a one-time-password prompt in CI (npm error
-#   EOTP) that a workflow cannot answer, so release-triggered publishing fails.
-#   To publish from CI, set the NPM_TOKEN secret to an npm **Automation** token
-#   (or a granular token with read-write for this package) — those bypass 2FA.
+# Requirements:
+#   - An `NPM_TOKEN` repository secret set to an npm **Automation** token (or a
+#     granular token with read-write for this package). Automation/granular
+#     tokens bypass 2FA; a classic "Publish" token triggers an EOTP prompt that
+#     CI cannot answer, so it must NOT be used here.
 #
-#   Once such a token is configured, you can re-enable auto-publish on release
-#   by adding these triggers back under `on:`:
-#     release:
-#       types: [published]
+# Release flow:
+#   1. Bump `version` in package.json and merge to the default branch.
+#   2. Create a GitHub Release (e.g. tag `v1.1.0`) — this triggers publish.
+#   The job skips automatically if that version is already on npm.
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -50,10 +52,24 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Check whether this version is already published
+        id: published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${NAME}@${VERSION} is already on npm — skipping publish."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing ${NAME}@${VERSION}"
+          fi
+
       # prepublishOnly re-runs lint + test as a final safety net.
       # --provenance is omitted because it requires a public repo (this is
       # private); the package is still published publicly via --access public.
       - name: Publish
+        if: steps.published.outputs.skip == 'false'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
